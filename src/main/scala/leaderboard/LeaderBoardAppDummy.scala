@@ -28,7 +28,19 @@ object LeaderboardRole extends RoleDescriptor {
   final val id = "leaderboard"
 }
 
-object LeaderBoardAppDummy extends MainBase(Activation(Repo -> Repo.Dummy))
+object LeaderBoardAppDummy
+  extends MainBase(
+    Activation(
+      Repo -> Repo.Dummy
+    )
+  )
+
+object LeaderBoardAppProd
+  extends MainBase(
+    Activation(
+      Repo -> Repo.Prod
+    )
+  )
 
 sealed abstract class MainBase(
   activation: Activation,
