@@ -10,6 +10,7 @@ import leaderboard.model.{QueryFailure, RankedProfile, Score, UserId, UserProfil
 import leaderboard.repo.{Ladder, Profiles, Ranks}
 import org.scalacheck.Gen.Parameters
 import Rnd.rnd
+import leaderboard.axis.Scene
 import org.scalacheck._
 import zio.{Has, IO, ZIO}
 
@@ -68,7 +69,10 @@ trait WithDummy extends DistageBIOEnvSpecScalatest[ZIO] {
 
 trait WithProd extends DistageBIOEnvSpecScalatest[ZIO] {
   override protected def config: TestConfig = super.config.copy(
-    activation = Activation(Repo -> Repo.Prod)
+    activation = Activation(
+      Repo  -> Repo.Prod,
+      Scene -> Scene.Managed,
+    )
   )
 }
 

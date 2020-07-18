@@ -8,6 +8,7 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginDef
 import izumi.fundamentals.platform.integration.PortCheck
 import leaderboard.LeaderboardRole
+import leaderboard.axis.Scene
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.{HttpApi, HttpServer}
 import leaderboard.repo._
@@ -42,6 +43,7 @@ object LeaderboardPlugins extends PluginDef {
       make[Transactor[F[Throwable, *]]].fromResource[TransactorResource[F[Throwable, *]]]
       makeConfig[PostgresCfg]("postgres")
       makeConfig[PostgresPortCfg]("postgres")
+        .tagged(Scene.Provided)
       make[PortCheck].from(new PortCheck(3.seconds))
     }
 
