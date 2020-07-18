@@ -1,6 +1,9 @@
 package leaderboard.http
 
 import cats.effect.Sync
+import io.circe.syntax._
+import izumi.functional.bio.BIO
+import leaderboard.model.UserProfile
 import leaderboard.repo.{Ladder, Profiles, Ranks}
 import org.http4s.HttpRoutes
 import org.http4s.circe._
@@ -12,7 +15,7 @@ trait HttpApi[F[_, _]] {
 
 object HttpApi {
 
-  final class Impl[F[+_, +_]](
+  final class Impl[F[+_, +_]: BIO](
     dsl: Http4sDsl[F[Throwable, *]],
     ladder: Ladder[F],
     profiles: Profiles[F],
@@ -25,16 +28,21 @@ object HttpApi {
     override def http: HttpRoutes[F[Throwable, *]] = {
       HttpRoutes.of[F[Throwable, *]] {
         case GET -> Root / "ladder" =>
-          InternalServerError()
+          Ok(ladder.getScores.map(_.asJson))
 
         case POST -> Root / "ladder" / UUIDVar(userId) / LongVar(score) =>
-          InternalServerError()
+          Ok(ladder.submitScore(userId, score))
 
         case GET -> Root / "profile" / UUIDVar(userId) =>
-          InternalServerError()
+          Ok(ranks.getRank(userId).map(_.asJson))
 
         case rq @ POST -> Root / "profile" / UUIDVar(userId) =>
-          InternalServerError()
+          Ok {
+            for {
+              profile <- rq.decodeJson[UserProfile]
+              _       <- profiles.setProfile(userId, profile)
+            } yield {}
+          }
       }
     }
   }

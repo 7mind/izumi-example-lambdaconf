@@ -1,26 +1,32 @@
 package leaderboard.plugins
 
-import java.util.concurrent.ThreadPoolExecutor
-
-import cats.effect.{Async, Blocker, Bracket, ConcurrentEffect, ContextShift, Timer}
-import distage.plugins.PluginDef
-import distage.{Id, ModuleDef, TagKK}
-import izumi.distage.effect.modules.ZIODIEffectModule
+import cats.effect.Sync
+import distage.{ModuleDef, TagKK}
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginDef
+import leaderboard.LeaderboardRole
+import leaderboard.http.{HttpApi, HttpServer}
 import leaderboard.repo._
-import logstage.LogBIO
-import zio.{IO, Task}
-import zio.interop.catz.taskEffectInstance
-
-import scala.concurrent.ExecutionContext
+import org.http4s.dsl.Http4sDsl
+import zio.IO
+import zio.interop.catz._
+import zio.interop.catz.implicits._
 
 object LeaderboardPlugins extends PluginDef {
   include(modules.repoDummy[IO])
+  include(modules.api[IO])
 
   object modules {
     def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      addImplicit[Sync[IO[Throwable, *]]]
+
       make[Ranks[F]].from[Ranks.Impl[F]]
+      make[HttpApi.Impl[F]]
+      many[HttpApi[F]]
+        .weak[HttpApi.Impl[F]]
+      make[HttpServer[F]].fromResource[HttpServer.HttpServerImpl[F]]
+      make[Http4sDsl[F[Throwable, *]]]
+      make[LeaderboardRole[F]]
     }
 
     def repoDummy[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
@@ -30,27 +36,4 @@ object LeaderboardPlugins extends PluginDef {
       make[Profiles[F]].fromResource[Profiles.DummyImpl[F]]
     }
   }
-}
-
-import zio.interop.catz._
-import zio.interop.catz.implicits._
-
-object ZIOPlugin extends PluginDef {
-  include(ZIODIEffectModule)
-
-  addImplicit[Bracket[Task, Throwable]]
-  addImplicit[Async[Task]]
-  addImplicit[ContextShift[Task]]
-  addImplicit[Timer[Task]]
-  make[ConcurrentEffect[Task]].from {
-    runtime: zio.Runtime[Any] =>
-      taskEffectInstance(runtime)
-  }
-
-  make[Blocker].from {
-    pool: ThreadPoolExecutor @Id("zio.io") =>
-      Blocker.liftExecutionContext(ExecutionContext.fromExecutorService(pool))
-  }
-
-  make[LogBIO[IO]].from(LogBIO.fromLogger[IO] _)
 }
