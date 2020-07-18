@@ -7,9 +7,8 @@ import izumi.distage.testkit.scalatest.{AssertIO, DistageBIOEnvSpecScalatest}
 import izumi.functional.bio.{BIO, F}
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.Ladder
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins
-import org.scalacheck._
 import org.scalacheck.Gen.Parameters
+import org.scalacheck._
 import zio.{IO, ZIO}
 
 trait Rnd[F[_, _]] {
