@@ -2,7 +2,7 @@ package leaderboard.plugins
 
 import java.util.concurrent.ThreadPoolExecutor
 
-import cats.effect.{Async, Blocker, Bracket, ConcurrentEffect, ContextShift, Timer}
+import cats.effect.{Async, Blocker, Bracket, ConcurrentEffect, ContextShift, Sync, Timer}
 import distage.Id
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
@@ -18,6 +18,7 @@ object ZIOPlugin extends PluginDef {
   include(ZIODIEffectModule)
   include(CatsDIEffectModule)
 
+  addImplicit[Sync[Task]]
   addImplicit[Bracket[Task, Throwable]]
   addImplicit[Async[Task]]
   addImplicit[ContextShift[Task]]

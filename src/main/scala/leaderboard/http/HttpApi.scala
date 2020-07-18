@@ -15,11 +15,9 @@ trait HttpApi[F[_, _]] {
 
 object HttpApi {
 
-  final class Impl[F[+_, +_]: BIO](
+  final class LadderApi[F[+_, +_]: BIO](
     dsl: Http4sDsl[F[Throwable, *]],
     ladder: Ladder[F],
-    profiles: Profiles[F],
-    ranks: Ranks[F],
   )(implicit sync: Sync[F[Throwable, *]],
   ) extends HttpApi[F] {
 
@@ -32,7 +30,20 @@ object HttpApi {
 
         case POST -> Root / "ladder" / UUIDVar(userId) / LongVar(score) =>
           Ok(ladder.submitScore(userId, score))
+      }
+    }
+  }
+  final class ProfileApi[F[+_, +_]: BIO](
+    dsl: Http4sDsl[F[Throwable, *]],
+    profiles: Profiles[F],
+    ranks: Ranks[F],
+  )(implicit sync: Sync[F[Throwable, *]],
+  ) extends HttpApi[F] {
 
+    import dsl._
+
+    override def http: HttpRoutes[F[Throwable, *]] = {
+      HttpRoutes.of[F[Throwable, *]] {
         case GET -> Root / "profile" / UUIDVar(userId) =>
           Ok(ranks.getRank(userId).map(_.asJson))
 

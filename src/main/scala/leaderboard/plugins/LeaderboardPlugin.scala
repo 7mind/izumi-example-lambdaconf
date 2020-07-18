@@ -6,8 +6,9 @@ import distage.{ModuleDef, TagKK}
 import doobie.util.transactor.Transactor
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginDef
+import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.fundamentals.platform.integration.PortCheck
-import leaderboard.LeaderboardRole
+import leaderboard.{LadderRole, LeaderboardRole, ProfileRole}
 import leaderboard.axis.Scene
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.{HttpApi, HttpServer}
@@ -19,23 +20,34 @@ import zio.interop.catz._
 
 import scala.concurrent.duration.DurationInt
 
-object LeaderboardPlugins extends PluginDef {
+object LeaderboardPlugin extends PluginDef {
   include(modules.repoDummy[IO])
   include(modules.repoProd[IO])
+  include(modules.roles[IO])
   include(modules.api[IO])
   include(modules.sql[IO])
 
   object modules {
+    def roles[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      make[LeaderboardRole[F]]
+      make[LadderRole[F]]
+      make[ProfileRole[F]]
+      include(BundledRolesModule[F[Throwable, *]]("1.0.0"))
+    }
+
     def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
-      addImplicit[Sync[IO[Throwable, *]]]
 
       make[Ranks[F]].from[Ranks.Impl[F]]
-      make[HttpApi.Impl[F]]
+
+      make[HttpApi.LadderApi[F]]
+      make[HttpApi.ProfileApi[F]]
+
       many[HttpApi[F]]
-        .weak[HttpApi.Impl[F]]
+        .weak[HttpApi.LadderApi[F]]
+        .weak[HttpApi.ProfileApi[F]]
+
       make[HttpServer[F]].fromResource[HttpServer.HttpServerImpl[F]]
       make[Http4sDsl[F[Throwable, *]]]
-      make[LeaderboardRole[F]]
     }
 
     def sql[F[+_, +_]: TagKK]: ModuleDef = new ConfigModuleDef {
